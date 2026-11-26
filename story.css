@@ -198,6 +198,21 @@ em{font-style:normal;color:var(--blue)}
 .strip i{flex:1;border-radius:4px}
 .pill{display:inline-block;font-size:12px;font-weight:800;color:#fff;padding:3px 10px;border-radius:999px;white-space:nowrap}
 .lv0{background:var(--lv0)} .lv1{background:var(--lv1);color:#422006} .lv2{background:var(--lv2)} .lv3{background:var(--lv3)}
+/* 지도에서 목적지 고르기 */
+.live-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.live-head .badge{margin-top:0}
+.soon-badge{color:var(--sub)}
+.live-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.live-row select,.live-row input{font:inherit;padding:11px 13px;border-radius:12px;border:1px solid var(--line);background:#f8fafc;color:var(--ink);outline:none}
+.live-row input{flex:1;min-width:180px}
+.live-row input:focus{border-color:var(--blue);box-shadow:0 0 0 4px #2563eb1f;background:#fff}
+.live-row .btn{border:0;cursor:pointer;font:inherit;font-weight:700}
+.live-results{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.live-results button{border:1px solid var(--sky2);background:#fff;color:var(--deep);padding:6px 12px;border-radius:999px;cursor:pointer;font:inherit;font-size:13px;font-weight:600}
+.live-results button:hover{background:var(--sky)}
+.live-map{height:340px;margin-top:12px;border-radius:16px;overflow:hidden;background:var(--sky);display:grid;place-items:center;text-align:center;padding:0}
+.live-status{margin:10px 0 0;font-size:14px;color:var(--sub)}
+.live-status.err{color:#dc2626}
 .warn{display:inline-block;margin-left:4px;color:#c2410c;font-weight:800;font-size:13px}
 .lasttag{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#1e3a8a;color:#fff;font-size:11px;font-weight:800;vertical-align:2px}
 .lastbox{margin-top:12px;padding:12px 15px;border-radius:14px;background:#f8fafc;border:1px solid var(--line);font-size:14px}

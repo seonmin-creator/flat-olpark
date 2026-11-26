@@ -1,8 +1,11 @@
 // FLAT BUS 올팍 — 버스 차내 혼잡도 계산 모델
 // 현재 버스 탑승 인원 = 기존 인원 + (승차 인원 − 하차 인원) [+ 공연 추가 승차]
 // 혼잡도 = 현재 예상 승객 수 ÷ 최대 탑승 가능 승객 수
+// FLAT.buildModel(데이터)로 언제든 새 데이터(예: 지도에서 고른 목적지의 실제 노선)로 모델을 다시 만들 수 있습니다.
 (function () {
-  const { CARD_ROWS, ROUTE_META, BUS_SOURCE, SHOWS, VENUES, EVENT, BUS_CAPACITY, HOLIDAYS } = FLAT;
+FLAT.buildModel = function (D) {
+  const { CARD_ROWS, ROUTE_META, BUS_SOURCE } = D;
+  const { SHOWS, VENUES, EVENT, BUS_CAPACITY, HOLIDAYS } = FLAT;
   const STEP = 10;
 
   const hm = (s) => { const [h, m] = s.split(':').map(Number); return h * 60 + m; };
@@ -19,7 +22,9 @@
   }
   const routes = ROUTE_META.filter((m) => m.stops.length > 1);
   // 공연장 근처 정류장: 좌표기반 근접정류소 결과(FLAT.VENUE_STOPS)가 있으면 그것을, 없으면 이름으로 찾음
-  const VENUE_STOPS = FLAT.VENUE_STOPS || null;
+  const VENUE_STOPS = D.VENUE_STOPS || null;
+  // 목적지: 정류장 이름(문자열) 또는 { ids: Set(정류장ID) }
+  const destMatch = (dest) => (dest && dest.ids ? (id) => dest.ids.has(id) : (id) => stopName[id] === dest);
   const onRoute = new Set(routes.flatMap((m) => m.stops));
   const parkSet = new Set(VENUE_STOPS
     ? Object.values(VENUE_STOPS).flatMap((d) => Object.keys(d)).filter((id) => onRoute.has(id))
@@ -108,9 +113,10 @@
   // ---- 경로 후보 (노선 × 다음 버스 3대) ----
   function options(originIds, destName, date, t) {
     const out = [];
+    const isDest = destMatch(destName);
     for (const m of routes) for (const o of originIds) {
       const oi = m.stops.indexOf(o);
-      const di = m.stops.findIndex((id, i) => i > oi && stopName[id] === destName);
+      const di = m.stops.findIndex((id, i) => i > oi && isDest(id));
       if (oi < 0 || di < 0) continue;
       const offset = oi * m.minPerStop;
       const last = lastAt(m, oi);
@@ -140,7 +146,7 @@
     for (const m of routes) for (const o of originIds) {
       const oi = m.stops.indexOf(o);
       if (oi < 0) continue;
-      if (destName && !m.stops.some((id, i) => i > oi && stopName[id] === destName)) continue;
+      if (destName && !m.stops.some((id, i) => i > oi && destMatch(destName)(id))) continue;
       out.push({ route: m, origin: stopName[o], last: lastAt(m, oi) });
     }
     return out.sort((a, b) => a.last - b.last);
@@ -148,5 +154,7 @@
 
   const isWeekend = (date) => { const d = new Date(date + 'T00:00:00'); return d.getDay() === 0 || d.getDay() === 6 || HOLIDAYS.includes(date); };
 
-  FLAT.model = { hm, fmt, stopName, routes, parkStops, showsOn, eventDates, showEnd, runBus, level, destinations, options, lastBuses, isWeekend };
+  return { hm, fmt, stopName, routes, parkStops, showsOn, eventDates, showEnd, runBus, level, destinations, options, lastBuses, isWeekend, source: BUS_SOURCE };
+};
+FLAT.model = FLAT.buildModel(FLAT);
 })();
