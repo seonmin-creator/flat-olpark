@@ -5,119 +5,205 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FLAT BUS 올팍</title>
 <meta name="description" content="교통카드 승하차 데이터와 올림픽공원 공연정보로 계산한 버스 차내 혼잡도와 덜 붐비는 버스 추천">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg:#f4f6fa; --card:#ffffff; --ink:#14213d; --sub:#5b6475; --line:#e3e7ee;
-  --brand:#1f3a5f; --accent:#ff7a45; --chip:#eef2f8;
-  --lv0:#22a06b; --lv1:#e2b203; --lv2:#f5832a; --lv3:#e5484d;
-  --shadow:0 1px 2px rgba(20,33,61,.06),0 4px 16px rgba(20,33,61,.06);
-}
-@media (prefers-color-scheme: dark){
-  :root{ --bg:#0f1420; --card:#171e2d; --ink:#e8edf6; --sub:#9aa5b8; --line:#283246; --brand:#8fb4e3; --chip:#1f2839; --shadow:none; }
-}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;font-size:15px;line-height:1.55}
-.wrap{max-width:980px;margin:0 auto;padding:0 16px 40px}
-header{padding:22px 0 6px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.logo{font-weight:900;font-size:26px;letter-spacing:-.5px;color:var(--brand)}
-.logo b{color:var(--accent)}
-.tag{color:var(--sub);font-size:13px}
-.badge{font-size:12px;background:var(--chip);color:var(--sub);padding:4px 10px;border-radius:99px}
-h2{font-size:17px;margin:0 0 10px}
-h3{font-size:14px;margin:14px 0 6px;color:var(--sub);font-weight:500}
-.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow);margin-top:14px}
-.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
-.field label{display:block;font-size:12px;color:var(--sub);margin-bottom:4px}
-input,select{font:inherit;width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
-.dates{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px}
-.date{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:6px 10px;cursor:pointer;text-align:center;min-width:58px;font:inherit;font-size:14px}
-.date small{display:block;color:var(--sub);font-size:11px}
-.date.on{background:var(--brand);border-color:var(--brand);color:#fff}
-.date.on small{color:#dbe6f5}
-.event{background:color-mix(in srgb,var(--accent) 12%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:12px;padding:10px 12px;font-size:14px;margin-top:12px}
-.event.none{background:var(--chip);border-color:var(--line)}
-.sort{display:flex;gap:6px}
-.sort button{border:0;background:var(--chip);color:var(--ink);padding:8px 14px;border-radius:99px;cursor:pointer;font:inherit;font-weight:500}
-.sort button.on{background:var(--ink);color:var(--bg)}
-.opts{display:grid;gap:10px;margin-top:12px}
-.opt{border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:8px;cursor:pointer;background:var(--card);color:var(--ink);text-align:left;font:inherit;width:100%}
-.opt.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
-.opt .head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
-.opt .rt{font-weight:700;font-size:17px}
-.opt .meta{color:var(--sub);font-size:13px}
-.strip{display:flex;gap:2px;height:10px}
-.strip i{flex:1;border-radius:3px}
-.pill{display:inline-block;font-size:12px;font-weight:700;color:#fff;padding:3px 9px;border-radius:99px;white-space:nowrap}
-.lv0{background:var(--lv0)} .lv1{background:var(--lv1);color:#3a2e00} .lv2{background:var(--lv2)} .lv3{background:var(--lv3)}
-.tip{background:var(--chip);border-radius:12px;padding:12px;font-size:14px;margin-top:12px}
-.formula{font-family:ui-monospace,Consolas,monospace;background:var(--chip);border-radius:10px;padding:10px 12px;font-size:13px;overflow-x:auto;line-height:1.8}
-.chart{position:relative;height:260px}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:7px 6px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
-th{color:var(--sub);font-weight:500;font-size:12px}
-tr.ride td{background:color-mix(in srgb,var(--accent) 7%,transparent)}
-.plus{color:var(--lv0)} .minus{color:var(--lv3)} .ev{color:var(--accent);font-weight:700}
-.note{font-size:12px;color:var(--sub)}
-.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-top:6px}
-.legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px;background:var(--c)}
-footer{margin-top:28px;font-size:12px;color:var(--sub);line-height:1.7}
-</style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="story.css?v=11">
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div>
-      <div class="logo">FLAT <b>BUS</b> 올팍</div>
-      <div class="tag">교통카드 승하차 데이터로 계산한 버스 혼잡도 — 공연 날엔 공연정보까지 더해서</div>
-    </div>
-    <span class="badge" id="srcBadge"></span>
-  </header>
+<header class="nav">
+  <a class="brand" href="#top"><span class="brand-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="4"/><path d="M4 11h16M8 21v-3M16 21v-3"/><circle cx="8.5" cy="14.5" r="1"/><circle cx="15.5" cy="14.5" r="1"/></svg></span>FLAT BUS <b>올팍</b></a>
+  <a class="btn btn-sm magnet" href="#demo">직접 써보기</a>
+</header>
 
-  <section class="card">
-    <h2>어디로 가세요?</h2>
-    <div class="form">
-      <div class="field"><label for="dest">목적지 검색</label><input id="dest" list="destList" placeholder="정류장 이름 (예: 잠실역)" autocomplete="off"><datalist id="destList"></datalist></div>
-      <div class="field"><label for="origin">타는 곳</label><select id="origin"></select></div>
-      <div class="field"><label for="time">출발 시각</label><select id="time"></select></div>
+<svg class="blob" id="blob" viewBox="-100 -100 200 200" aria-hidden="true">
+  <defs><linearGradient id="blobFill" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#bfdbfe"/><stop offset="1" stop-color="#eff6ff"/></linearGradient></defs>
+  <path id="blobPath" fill="url(#blobFill)"/>
+</svg>
+<nav class="dots" id="dots" aria-label="이야기 목차"></nav>
+
+<main id="top">
+  <!-- 시작 -->
+  <section class="sc sc-hero" data-len="2.2" data-name="시작">
+    <div class="stage">
+      <div class="hero-copy">
+        <p class="kicker">Team F-SW · 교통카드 데이터로 보는 버스 혼잡도</p>
+        <h1 class="letters" data-text="공연이 끝나면,|버스는 꽉 찹니다." aria-label="공연이 끝나면, 버스는 꽉 찹니다."></h1>
+        <span class="hint">내려서 이야기 보기 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>
+      </div>
+      <div class="hero-card">
+        <svg class="night" viewBox="0 0 800 450" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+          <defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b1f4d"/><stop offset="1" stop-color="#1d4ed8"/></linearGradient></defs>
+          <rect width="800" height="450" fill="url(#sky)"/>
+          <g fill="#ffffff" opacity=".6"><circle cx="90" cy="60" r="1.6"/><circle cx="230" cy="40" r="1.2"/><circle cx="420" cy="70" r="1.4"/><circle cx="610" cy="45" r="1.2"/><circle cx="720" cy="90" r="1.6"/></g>
+          <path d="M60 300 Q160 150 260 300Z" fill="#1e3a8a"/><text x="160" y="285" text-anchor="middle" fill="#93c5fd" font-size="14" font-weight="700">KSPO DOME</text>
+          <g fill="#173a8f"><rect x="420" y="210" width="60" height="90"/><rect x="490" y="180" width="44" height="120"/><rect x="545" y="230" width="70" height="70"/></g>
+          <rect y="300" width="800" height="150" fill="#0a1a3f"/>
+          <rect y="372" width="800" height="6" fill="#facc15" opacity=".35"/>
+          <g class="stop-sign"><rect x="300" y="215" width="6" height="95" fill="#93c5fd"/><rect x="262" y="198" width="82" height="34" rx="8" fill="#2563eb"/><text x="303" y="221" text-anchor="middle" fill="#fff" font-size="13" font-weight="800">올림픽공원</text></g>
+          <g id="crowd"></g>
+          <g id="heroBus" transform="translate(820 0)">
+            <rect x="0" y="250" width="230" height="95" rx="18" fill="#3b82f6"/><rect x="0" y="318" width="230" height="27" rx="0" fill="#1d4ed8"/>
+            <g fill="#dbeafe"><rect x="16" y="264" width="40" height="38" rx="6"/><rect x="64" y="264" width="40" height="38" rx="6"/><rect x="112" y="264" width="40" height="38" rx="6"/><rect x="160" y="264" width="54" height="38" rx="6"/></g>
+            <g fill="#1e3a8a" opacity=".85"><circle cx="30" cy="285" r="7"/><circle cx="44" cy="287" r="7"/><circle cx="78" cy="284" r="7"/><circle cx="92" cy="288" r="7"/><circle cx="126" cy="285" r="7"/><circle cx="140" cy="287" r="7"/><circle cx="176" cy="286" r="7"/><circle cx="196" cy="285" r="7"/></g>
+            <rect x="150" y="234" width="70" height="22" rx="6" fill="#ef4444"/><text x="185" y="250" text-anchor="middle" fill="#fff" font-size="13" font-weight="800">만차</text>
+            <circle cx="50" cy="348" r="18" fill="#0f172a"/><circle cx="180" cy="348" r="18" fill="#0f172a"/>
+          </g>
+        </svg>
+        <p class="hero-cap">21:30, 올림픽공원 정류장.<br>콘서트가 막 끝났습니다.</p>
+      </div>
     </div>
-    <h3>날짜 (🎵 = 올림픽공원 공연 있는 날)</h3>
-    <div class="dates" id="dates"></div>
-    <div id="eventBox"></div>
   </section>
 
-  <section class="card">
-    <div class="head" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
-      <h2 style="margin:0">경로 안내</h2>
-      <div class="sort" id="sort"><button data-s="comfort" class="on">덜 붐비게</button><button data-s="fast">빠른 순</button></div>
+  <!-- 질문 -->
+  <section class="sc sc-q" data-len="1.7" data-name="질문">
+    <div class="stage"><h2 class="words big" data-from="0.05" data-to="0.75">버스가 도착하기 전까지, | 차 안이 얼마나 *붐비는지 *모릅니다.</h2></div>
+  </section>
+
+  <!-- 현실 -->
+  <section class="sc sc-real" data-len="2.4" data-name="현실">
+    <div class="stage">
+      <div class="split">
+        <div class="count-copy">
+          <p class="eyebrow">2026년 11월 27일 금요일, 올림픽공원</p>
+          <h2>같은 밤, 두 개의 공연</h2>
+          <div class="num"><b data-count="16560" data-from="0.02" data-to="0.4">0</b><span>명의 관객</span></div>
+          <div class="num num-2 reveal-at" data-at="0.45"><b data-count="994" data-from="0.45" data-to="0.8">0</b><span>명이 같은 시간대에 버스 정류장으로</span></div>
+          <small>공연 일정: 한국체육산업개발 올림픽공원 공연정보 · 관객 수는 공연장 수용인원 기준 추정, 버스 이용 비율 6%(예시)</small>
+        </div>
+        <div class="people" id="people" aria-hidden="true"></div>
+      </div>
     </div>
-    <div class="legend"><span style="--c:var(--lv0)">여유</span><span style="--c:var(--lv1)">보통</span><span style="--c:var(--lv2)">혼잡</span><span style="--c:var(--lv3)">매우 혼잡</span></div>
-    <div id="tipBox"></div>
-    <div class="opts" id="opts"></div>
   </section>
 
-  <section class="card" id="detail">
-    <h2 id="dTitle">혼잡도 계산 과정</h2>
-    <div class="formula">현재 버스 탑승 인원 = 기존 인원 + (승차 인원 − 하차 인원) + 공연 추가 승차<br>혼잡도 = 현재 예상 승객 수 ÷ 최대 탑승 가능 승객 수(<span id="capTxt"></span>명)</div>
-    <p class="note" id="dNote"></p>
-    <div class="chart"><canvas id="cLoad"></canvas></div>
-    <div style="overflow-x:auto;margin-top:10px" id="dTable"></div>
+  <!-- 원인 -->
+  <section class="sc sc-cause" data-len="2.8" data-name="원인">
+    <div class="stage">
+      <div class="cause-grid">
+        <div class="cause-copy">
+          <h2>몰라서 타는 게 아니라,<br><em>알 방법이 없었습니다.</em></h2>
+          <small>버스 이용자가 정류장에서 얻는 정보는 대부분 "몇 분 뒤 도착"뿐입니다.</small>
+        </div>
+        <div class="deck">
+          <article class="ccard" data-k="0"><div class="cnum">01</div><div class="cicon">👀</div><h3>버스 안은 보이지 않습니다</h3><p>도착 정보는 시간만 알려줄 뿐, 차 안에 몇 명이 타고 있는지는 버스가 와야 알 수 있습니다.</p></article>
+          <article class="ccard" data-k="1"><div class="cnum">02</div><div class="cicon">🎤</div><h3>공연은 한꺼번에 끝납니다</h3><p>수천 명의 관객이 같은 시각에 퇴장해 가장 가까운 정류장과 첫 버스로 몰립니다.</p></article>
+          <article class="ccard" data-k="2"><div class="cnum">03</div><div class="cicon">📊</div><h3>평소 통계로는 알 수 없습니다</h3><p>평균 승하차 통계에는 공연 날의 갑작스러운 승객 증가가 담겨 있지 않습니다.</p></article>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <footer>
-    <b>데이터</b><br>
-    · 승하차 인원: <span id="srcLabel"></span> — 버스 1대 평균 = 월간 승(하)차 인원 ÷ 일수 ÷ 시간당 운행 대수<br>
-    · 공연: 한국체육산업개발 「올림픽공원 공연정보」 (2026년 11~12월 공연 일정) — 공연 종료 후 올림픽공원 정류장 추가 승차 계산<br>
-    · 관객 수·버스 이용 비율·퇴장 분포·최대 탑승 인원은 시연용 예시값이며, 정식 서비스에서는 올림픽공원 입출차·공연 연계 데이터로 보정합니다.<br>
-    · 2026 공공데이터 활용 경진대회 출품작 시연 페이지
-  </footer>
-</div>
+  <!-- 원리 -->
+  <section class="sc sc-calc" data-len="3.2" data-name="원리">
+    <div class="stage">
+      <div class="calc">
+        <div class="calc-copy">
+          <p class="eyebrow">FLAT BUS의 계산법</p>
+          <h2>정류장마다 더하고 빼면,<br><em>버스 안이 보입니다.</em></h2>
+          <div class="formula-big">현재 탑승 인원 = 기존 인원 + (승차 − 하차)<span class="plus-ev"> + 공연 관객</span></div>
+        </div>
+        <div class="route">
+          <div class="road"><i class="road-fill" id="roadFill"></i></div>
+          <div class="stops" id="calcStops"></div>
+          <div class="mini-bus" id="miniBus"><svg viewBox="0 0 60 36"><rect x="1" y="1" width="58" height="28" rx="7" fill="#2563eb"/><rect x="6" y="6" width="12" height="10" rx="2" fill="#dbeafe"/><rect x="21" y="6" width="12" height="10" rx="2" fill="#dbeafe"/><rect x="36" y="6" width="18" height="10" rx="2" fill="#dbeafe"/><circle cx="14" cy="31" r="4" fill="#0f172a"/><circle cx="46" cy="31" r="4" fill="#0f172a"/></svg></div>
+          <div class="meter">
+            <div class="meter-top"><span>현재 탑승 인원</span><b id="loadNum">0</b><span>/ 60명</span><span class="pill lv0" id="loadPill">여유</span></div>
+            <div class="meter-bar"><i id="meterFill"></i><i class="ghost" id="meterGhost"></i></div>
+            <p class="meter-note" id="meterNote">교통카드 승하차 데이터로 계산</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 데이터 -->
+  <section class="sc sc-data" data-len="2" data-name="데이터">
+    <div class="stage">
+      <div class="merge">
+        <h2 class="merge-title">두 공공데이터가 만나<br><em>공연 날의 버스</em>를 계산합니다.</h2>
+        <div class="merge-row">
+          <div class="src src-l"><span class="src-tag">서울시</span><h3>교통카드 승하차 인원</h3><ul><li>노선별·정류장별</li><li>시간대별 승차·하차</li><li>매월 갱신</li></ul></div>
+          <svg class="links" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true"><path id="linkL" d="M0 60 C80 60 90 60 150 60"/><path id="linkR" d="M300 60 C220 60 210 60 150 60"/></svg>
+          <div class="core" id="core"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="15" rx="4"/><path d="M4 11h16M8 21v-3M16 21v-3"/></svg><b>FLAT BUS</b></div>
+          <div class="src src-r"><span class="src-tag">한국체육산업개발</span><h3>올림픽공원 공연정보</h3><ul><li>공연장·공연 시각</li><li>공연 종료 시각 계산</li><li>관객 규모 추정</li></ul></div>
+        </div>
+        <p class="merge-out" id="mergeOut">→ 평소 혼잡도 + 공연 관객 = <b>공연 날 버스 혼잡도</b></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 사용법 -->
+  <section class="sc sc-steps" data-len="2.6" data-name="사용법">
+    <div class="stage">
+      <div class="steps-wrap">
+        <h2>세 단계면 충분합니다.</h2>
+        <div class="steps">
+          <article class="step tilt" data-k="0"><span class="snum">01</span><h3>목적지 검색</h3><p>가려는 정류장과 날짜·시각을 고릅니다. 공연 있는 날은 🎵로 표시됩니다.</p><div class="mock"><div class="mock-input">🔍 잠실역</div><div class="mock-chips"><span class="on">11/27 🎵</span><span>11/28 🎵</span><span>11/30</span></div></div></article>
+          <article class="step tilt" data-k="1"><span class="snum">02</span><h3>버스별 혼잡도 확인</h3><p>다음 버스마다 내가 타는 구간의 혼잡도를 색으로 보여줍니다.</p><div class="mock"><div class="mock-row"><b>21:42</b><span class="bar"><i style="background:#f59e0b"></i><i style="background:#f97316"></i><i style="background:#f97316"></i></span><span class="pill lv2">혼잡</span></div><div class="mock-row"><b>22:14</b><span class="bar"><i style="background:#22c55e"></i><i style="background:#22c55e"></i><i style="background:#22c55e"></i></span><span class="pill lv0">여유</span></div></div></article>
+          <article class="step tilt" data-k="2"><span class="snum">03</span><h3>덜 붐비게 추천</h3><p>기다릴 가치가 있다면 알려줍니다. 빨리 가고 싶다면 "빠른 순"으로.</p><div class="mock mock-tip">32분만 기다리면 <span class="pill lv2">혼잡</span> → <span class="pill lv0">여유</span></div></article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 비전 -->
+  <section class="sc sc-vision" data-len="1.7" data-name="비전">
+    <div class="stage"><div class="vision"><h2 class="words big" data-from="0.05" data-to="0.7">버스 한 대에 몰리지 않게, | 모두가 *편히 *가는 길.</h2><p class="vision-sub reveal-at" data-at="0.7">교통카드 데이터와 공연정보로, 공연이 끝난 밤에도 쾌적한 귀갓길을 만듭니다.</p></div></div>
+  </section>
+
+  <!-- 데모 -->
+  <section class="demo" id="demo">
+    <div class="wrap">
+      <div class="demo-head">
+        <p class="eyebrow">직접 써보세요</p>
+        <h2>오늘 밤, 어느 버스를 탈까요?</h2>
+        <span class="badge" id="srcBadge"></span>
+      </div>
+
+      <section class="card">
+        <h3 class="card-title">어디로 가세요?</h3>
+        <div class="form">
+          <div class="field"><label for="dest">목적지 검색</label><input id="dest" list="destList" placeholder="정류장 이름 (예: 잠실역)" autocomplete="off"><datalist id="destList"></datalist></div>
+          <div class="field"><label for="origin">타는 곳</label><select id="origin"></select></div>
+          <div class="field"><label for="time">출발 시각</label><select id="time"></select></div>
+        </div>
+        <h4>날짜 (🎵 = 올림픽공원 공연 있는 날)</h4>
+        <div class="dates" id="dates"></div>
+        <div id="eventBox"></div>
+      </section>
+
+      <section class="card">
+        <div class="row-between">
+          <h3 class="card-title" style="margin:0">경로 안내</h3>
+          <div class="sort" id="sort"><button data-s="comfort" class="on">덜 붐비게</button><button data-s="fast">빠른 순</button></div>
+        </div>
+        <div class="legend"><span style="--c:var(--lv0)">여유</span><span style="--c:var(--lv1)">보통</span><span style="--c:var(--lv2)">혼잡</span><span style="--c:var(--lv3)">매우 혼잡</span></div>
+        <div id="tipBox"></div>
+        <div class="opts" id="opts"></div>
+      </section>
+
+      <section class="card" id="detail">
+        <h3 class="card-title" id="dTitle">혼잡도 계산 과정</h3>
+        <div class="formula">현재 버스 탑승 인원 = 기존 인원 + (승차 인원 − 하차 인원) + 공연 추가 승차<br>혼잡도 = 현재 예상 승객 수 ÷ 최대 탑승 가능 승객 수(<span id="capTxt"></span>명)</div>
+        <p class="note" id="dNote"></p>
+        <div class="chart"><canvas id="cLoad"></canvas></div>
+        <div style="overflow-x:auto;margin-top:10px" id="dTable"></div>
+      </section>
+
+      <footer class="foot">
+        <b>데이터</b><br>
+        · 승하차 인원: <span id="srcLabel"></span> — 버스 1대 평균 = 월간 승(하)차 인원 ÷ 일수 ÷ 시간당 운행 대수<br>
+        · 공연: 한국체육산업개발 「올림픽공원 공연정보」 (2026년 11~12월 공연 일정) — 공연 종료 후 올림픽공원 정류장 추가 승차 계산<br>
+        · 관객 수·버스 이용 비율·퇴장 분포·최대 탑승 인원은 시연용 예시값이며, 정식 서비스에서는 올림픽공원 입출차·공연 연계 데이터로 보정합니다.<br>
+        · Team F-SW · 2026 공공데이터 활용 경진대회 출품작
+      </footer>
+    </div>
+  </section>
+</main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="bus_data.js?v=7"></script>
-<script src="data.js?v=7"></script>
-<script src="model.js?v=7"></script>
-<script src="app.js?v=9"></script>
+<script src="bus_data.js?v=10"></script>
+<script src="data.js?v=10"></script>
+<script src="model.js?v=10"></script>
+<script src="app.js?v=10"></script>
+<script src="story.js?v=11"></script>
 </body>
 </html>
