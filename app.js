@@ -53,16 +53,37 @@
   function renderEvent() {
     const shows = M.showsOn(st.date);
     if (!shows.length) { $('eventBox').innerHTML = `<div class="event none">이 날은 올림픽공원 공연이 없어요. 교통카드 평균 승하차 인원만으로 계산해요.</div>`; return; }
+    const allLast = M.lastBuses(M.parkStops);
+    const latest = allLast.length ? allLast[allLast.length - 1].last : null;
+    const lastWarn = (s) => {
+      if (latest == null) return '';
+      const left = latest - (M.showEnd(s) + 15); // 퇴장·도보 15분
+      if (left < 5) return ` <span class="warn">⚠ 공연이 끝나면 올림픽공원 버스 막차가 이미 끊겨요</span>`;
+      if (left < 60) return ` <span class="warn">⚠ 마지막 막차까지 약 ${Math.round(left)}분</span>`;
+      return '';
+    };
     $('eventBox').innerHTML = `<div class="event"><b>🎵 이 날 올림픽공원 공연</b> <span class="note">(한국체육산업개발 공연정보)</span><br>` +
-      shows.map((s) => `${s.time} ${FLAT.VENUES[s.venue].name} · ${s.title} <span class="note">→ 종료 예상 ${M.fmt(M.showEnd(s))}</span>`).join('<br>') +
+      shows.map((s) => `${s.time} ${FLAT.VENUES[s.venue].name} · ${s.title} <span class="note">→ 종료 예상 ${M.fmt(M.showEnd(s))}</span>${lastWarn(s)}`).join('<br>') +
       `<div class="note" style="margin-top:4px">공연이 끝나면 관객이 올림픽공원 정류장에서 버스를 타기 때문에, 그 시간대 승차 인원을 더해서 혼잡도를 계산해요.</div></div>`;
   }
 
   // ---- 경로 안내 ----
   let opts = [];
+  function renderLast() {
+    const list = M.lastBuses(originIds(), st.dest);
+    if (!list.length) { $('lastBox').innerHTML = ''; return; }
+    const soon = list.filter((x) => x.last >= st.time && x.last - st.time <= 40);
+    const gone = list.every((x) => x.last < st.time);
+    const cls = gone ? 'lastbox gone' : soon.length ? 'lastbox soon' : 'lastbox';
+    const head = gone ? '🚫 이 시간에는 모든 노선의 막차가 끊겼어요' : soon.length ? `⏰ 막차가 얼마 남지 않았어요 — ${soon.map((x) => `${x.route.RTE_NM} ${Math.round(x.last - st.time)}분 후`).join(', ')}` : '🌙 막차 시간';
+    $('lastBox').innerHTML = `<div class="${cls}"><b>${head}</b><div class="lastlist">${list.map((x) => `<span class="${x.last < st.time ? 'off' : ''}">${x.route.RTE_NM} · ${x.origin} <b>${M.fmt(x.last)}</b></span>`).join('')}</div>
+      <div class="note">정류소별 노선 첫차/막차 예정시간 기준</div></div>`;
+  }
+
   function renderOptions() {
+    renderLast();
     opts = M.options(originIds(), st.dest, st.date, st.time);
-    if (!opts.length) { $('opts').innerHTML = '<p class="note">이 시간 이후 운행하는 버스가 없어요.</p>'; $('tipBox').innerHTML = ''; return; }
+    if (!opts.length) { $('opts').innerHTML = '<p class="note">이 시간 이후 운행하는 버스가 없어요. 위의 막차 시간을 확인해 주세요.</p>'; $('tipBox').innerHTML = ''; return; }
     const LV = { lv0: 0, lv1: 1, lv2: 2, lv3: 3 };
     const comfort = (o) => o.arrive + 30 * LV[M.level(o.maxCong).cls] + 20 * o.maxCong;
     const score = (o) => (st.sort === 'fast' ? o.arrive : comfort(o));
@@ -71,7 +92,7 @@
     $('opts').innerHTML = opts.slice(0, 6).map((o, i) => {
       const seg = o.ride.slice(o.oi, o.di);
       return `<button class="opt ${i === st.pick ? 'on' : ''}" data-i="${i}">
-        <div class="head"><div class="rt">${o.route.RTE_NM}</div>${pill(o.maxCong)}</div>
+        <div class="head"><div class="rt">${o.route.RTE_NM}${o.isLast ? ' <span class="lasttag">막차</span>' : ''}</div>${pill(o.maxCong)}</div>
         <div class="meta">🚏 ${o.origin} <b>${M.fmt(o.arriveO)}</b> 탑승 (${r1(o.wait)}분 후) → ${st.dest} <b>${M.fmt(o.arrive)}</b> 도착 · ${r1(o.travel)}분 · ${o.di - o.oi}정류장</div>
         <div class="strip" title="정류장별 차내 혼잡도">${seg.map((s) => `<i style="background:${lvColor(s.cong)}"></i>`).join('')}</div>
         ${o.extra > 0.5 ? `<div class="meta">🎵 공연이 끝난 관객 약 <b>${r1(o.extra)}명</b>이 함께 타요 · 공연 없을 때는 ${pill(o.baseMax)}</div>` : ''}
@@ -117,6 +138,7 @@
   }
 
   function render() {
+    if (!opts) opts = [];
     renderDates(); renderEvent();
     $('time').value = st.time; $('origin').value = st.origin;
     document.querySelectorAll('#sort button').forEach((b) => b.classList.toggle('on', b.dataset.s === st.sort));

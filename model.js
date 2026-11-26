@@ -18,7 +18,20 @@
     stopName[r.STOPS_ID] = cleanName(r.SBWY_STNS_NM);
   }
   const routes = ROUTE_META.filter((m) => m.stops.length > 1);
-  const parkStops = [...new Set(routes.flatMap((m) => m.stops.filter((id) => isPark(stopName[id]))))];
+  // 공연장 근처 정류장: 좌표기반 근접정류소 결과(FLAT.VENUE_STOPS)가 있으면 그것을, 없으면 이름으로 찾음
+  const VENUE_STOPS = FLAT.VENUE_STOPS || null;
+  const onRoute = new Set(routes.flatMap((m) => m.stops));
+  const parkSet = new Set(VENUE_STOPS
+    ? Object.values(VENUE_STOPS).flatMap((d) => Object.keys(d)).filter((id) => onRoute.has(id))
+    : [...onRoute].filter((id) => isPark(stopName[id])));
+  const parkStops = [...parkSet];
+  // 정류소별 막차 (정류소정보조회 getBustimeByStation) — 없으면 노선 막차 + 정류장 순서로 추정
+  function lastAt(route, i) {
+    const id = route.stops[i];
+    if (route.lastAt && route.lastAt[id] != null) return route.lastAt[id];
+    if (route.last != null) return route.last + i * route.minPerStop;
+    return 24 * 60 + 30;
+  }
   const routesAtStop = (id) => routes.filter((m) => m.stops.includes(id));
 
   // 한 달 합계 → 버스 1대 평균: 월 승차 ÷ 일수 ÷ 시간당 운행 대수
@@ -36,6 +49,7 @@
   const eventDates = () => [...new Set(SHOWS.map((s) => s.date))].sort();
   const showEnd = (s) => hm(s.time) + s.dur;
   function stopWeight(venue, stopId) {
+    if (VENUE_STOPS && VENUE_STOPS[venue]) return VENUE_STOPS[venue][stopId] || 0;
     const name = stopName[stopId];
     const w = VENUES[venue].stop;
     const keys = Object.keys(w).filter((k) => name.includes(k));
@@ -44,7 +58,7 @@
   }
   // 시각 t에 stopId에 도착하는 route 버스 1대에 더해지는 공연 관객 수
   function eventExtra(date, route, stopId, t) {
-    if (!isPark(stopName[stopId])) return { extra: 0, shows: [] };
+    if (!parkSet.has(stopId)) return { extra: 0, shows: [] };
     let people = 0;
     const hit = [];
     for (const s of showsOn(date)) {
@@ -86,7 +100,7 @@
     for (const m of routes) for (const o of originIds) {
       const oi = m.stops.indexOf(o);
       if (oi < 0) continue;
-      m.stops.slice(oi + 1).forEach((id) => { if (!isPark(stopName[id])) set.set(stopName[id], true); });
+      m.stops.slice(oi + 1).forEach((id) => { if (!parkSet.has(id)) set.set(stopName[id], true); });
     }
     return [...set.keys()].sort((a, b) => a.localeCompare(b, 'ko'));
   }
@@ -99,11 +113,12 @@
       const di = m.stops.findIndex((id, i) => i > oi && stopName[id] === destName);
       if (oi < 0 || di < 0) continue;
       const offset = oi * m.minPerStop;
+      const last = lastAt(m, oi);
       let k = Math.max(0, Math.ceil((t - offset - m.first) / m.headway));
       for (let n = 0; n < 6; n++, k++) {
         const depFirst = m.first + k * m.headway;
         const arriveO = depFirst + offset;
-        if (arriveO >= 24 * 60 + 30) break;
+        if (arriveO > last + 0.5) break; // 막차 이후 버스는 없음
         const ride = runBus(m, depFirst, date, true);
         const base = runBus(m, depFirst, date, false);
         const seg = ride.slice(oi, di);
@@ -112,14 +127,26 @@
           route: m, oi, di, depFirst, arriveO, wait: arriveO - t,
           arrive: ride[di].t, travel: ride[di].t - arriveO, ride, base,
           maxCong, baseMax: Math.max(...base.slice(oi, di).map((s) => s.cong)),
-          extra: ride[oi].extra, origin: stopName[o],
+          extra: ride[oi].extra, origin: stopName[o], last, isLast: arriveO + m.headway > last + 0.5,
         });
       }
     }
     return out;
   }
 
+  // 출발 정류장에서 목적지로 가는 노선들의 막차 시각
+  function lastBuses(originIds, destName) {
+    const out = [];
+    for (const m of routes) for (const o of originIds) {
+      const oi = m.stops.indexOf(o);
+      if (oi < 0) continue;
+      if (destName && !m.stops.some((id, i) => i > oi && stopName[id] === destName)) continue;
+      out.push({ route: m, origin: stopName[o], last: lastAt(m, oi) });
+    }
+    return out.sort((a, b) => a.last - b.last);
+  }
+
   const isWeekend = (date) => { const d = new Date(date + 'T00:00:00'); return d.getDay() === 0 || d.getDay() === 6 || HOLIDAYS.includes(date); };
 
-  FLAT.model = { hm, fmt, stopName, routes, parkStops, showsOn, eventDates, showEnd, runBus, level, destinations, options, isWeekend };
+  FLAT.model = { hm, fmt, stopName, routes, parkStops, showsOn, eventDates, showEnd, runBus, level, destinations, options, lastBuses, isWeekend };
 })();

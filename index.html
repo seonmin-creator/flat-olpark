@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FLAT BUS 올팍</title>
+<title>올림픽공원 안전버스</title>
 <meta name="description" content="교통카드 승하차 데이터와 올림픽공원 공연정보로 계산한 버스 차내 혼잡도와 덜 붐비는 버스 추천">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
-<link rel="stylesheet" href="story.css?v=11">
+<link rel="stylesheet" href="story.css?v=12">
 </head>
 <body>
 <header class="nav">
-  <a class="brand" href="#top"><span class="brand-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="4"/><path d="M4 11h16M8 21v-3M16 21v-3"/><circle cx="8.5" cy="14.5" r="1"/><circle cx="15.5" cy="14.5" r="1"/></svg></span>FLAT BUS <b>올팍</b></a>
+  <a class="brand" href="#top"><span class="brand-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="15" rx="4"/><path d="M4 11h16M8 21v-3M16 21v-3"/><circle cx="8.5" cy="14.5" r="1"/><circle cx="15.5" cy="14.5" r="1"/></svg></span>올팍 <b>안전버스</b></a>
   <a class="btn btn-sm magnet" href="#demo">직접 써보기</a>
 </header>
 
@@ -25,7 +25,7 @@
   <section class="sc sc-hero" data-len="2.2" data-name="시작">
     <div class="stage">
       <div class="hero-copy">
-        <p class="kicker">Team F-SW · 교통카드 데이터로 보는 버스 혼잡도</p>
+        <p class="kicker">올림픽공원 안전버스 · 김선민</p>
         <h1 class="letters" data-text="공연이 끝나면,|버스는 꽉 찹니다." aria-label="공연이 끝나면, 버스는 꽉 찹니다."></h1>
         <span class="hint">내려서 이야기 보기 <svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></span>
       </div>
@@ -96,7 +96,7 @@
     <div class="stage">
       <div class="calc">
         <div class="calc-copy">
-          <p class="eyebrow">FLAT BUS의 계산법</p>
+          <p class="eyebrow">안전버스의 계산법</p>
           <h2>정류장마다 더하고 빼면,<br><em>버스 안이 보입니다.</em></h2>
           <div class="formula-big">현재 탑승 인원 = 기존 인원 + (승차 − 하차)<span class="plus-ev"> + 공연 관객</span></div>
         </div>
@@ -122,7 +122,7 @@
         <div class="merge-row">
           <div class="src src-l"><span class="src-tag">서울시</span><h3>교통카드 승하차 인원</h3><ul><li>노선별·정류장별</li><li>시간대별 승차·하차</li><li>매월 갱신</li></ul></div>
           <svg class="links" viewBox="0 0 300 120" preserveAspectRatio="none" aria-hidden="true"><path id="linkL" d="M0 60 C80 60 90 60 150 60"/><path id="linkR" d="M300 60 C220 60 210 60 150 60"/></svg>
-          <div class="core" id="core"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="15" rx="4"/><path d="M4 11h16M8 21v-3M16 21v-3"/></svg><b>FLAT BUS</b></div>
+          <div class="core" id="core"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="15" rx="4"/><path d="M4 11h16M8 21v-3M16 21v-3"/></svg><b>안전버스</b></div>
           <div class="src src-r"><span class="src-tag">한국체육산업개발</span><h3>올림픽공원 공연정보</h3><ul><li>공연장·공연 시각</li><li>공연 종료 시각 계산</li><li>관객 규모 추정</li></ul></div>
         </div>
         <p class="merge-out" id="mergeOut">→ 평소 혼잡도 + 공연 관객 = <b>공연 날 버스 혼잡도</b></p>
@@ -176,6 +176,7 @@
           <div class="sort" id="sort"><button data-s="comfort" class="on">덜 붐비게</button><button data-s="fast">빠른 순</button></div>
         </div>
         <div class="legend"><span style="--c:var(--lv0)">여유</span><span style="--c:var(--lv1)">보통</span><span style="--c:var(--lv2)">혼잡</span><span style="--c:var(--lv3)">매우 혼잡</span></div>
+        <div id="lastBox"></div>
         <div id="tipBox"></div>
         <div class="opts" id="opts"></div>
       </section>
@@ -192,18 +193,19 @@
         <b>데이터</b><br>
         · 승하차 인원: <span id="srcLabel"></span> — 버스 1대 평균 = 월간 승(하)차 인원 ÷ 일수 ÷ 시간당 운행 대수<br>
         · 공연: 한국체육산업개발 「올림픽공원 공연정보」 (2026년 11~12월 공연 일정) — 공연 종료 후 올림픽공원 정류장 추가 승차 계산<br>
+        · 막차·공연장 근처 정류장: 서울시 정류소정보조회 「정류소별 노선 첫차/막차 예정시간」, 「좌표기반 근접정류소」 (시연 버전은 같은 형식의 예시값)<br>
         · 관객 수·버스 이용 비율·퇴장 분포·최대 탑승 인원은 시연용 예시값이며, 정식 서비스에서는 올림픽공원 입출차·공연 연계 데이터로 보정합니다.<br>
-        · Team F-SW · 2026 공공데이터 활용 경진대회 출품작
+        · 김선민 · 2026 공공데이터 활용 경진대회 출품작
       </footer>
     </div>
   </section>
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="bus_data.js?v=10"></script>
-<script src="data.js?v=10"></script>
-<script src="model.js?v=10"></script>
-<script src="app.js?v=10"></script>
-<script src="story.js?v=11"></script>
+<script src="bus_data.js?v=12"></script>
+<script src="data.js?v=12"></script>
+<script src="model.js?v=12"></script>
+<script src="app.js?v=13"></script>
+<script src="story.js?v=12"></script>
 </body>
 </html>

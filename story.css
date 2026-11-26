@@ -198,6 +198,14 @@ em{font-style:normal;color:var(--blue)}
 .strip i{flex:1;border-radius:4px}
 .pill{display:inline-block;font-size:12px;font-weight:800;color:#fff;padding:3px 10px;border-radius:999px;white-space:nowrap}
 .lv0{background:var(--lv0)} .lv1{background:var(--lv1);color:#422006} .lv2{background:var(--lv2)} .lv3{background:var(--lv3)}
+.warn{display:inline-block;margin-left:4px;color:#c2410c;font-weight:800;font-size:13px}
+.lasttag{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;background:#1e3a8a;color:#fff;font-size:11px;font-weight:800;vertical-align:2px}
+.lastbox{margin-top:12px;padding:12px 15px;border-radius:14px;background:#f8fafc;border:1px solid var(--line);font-size:14px}
+.lastbox.soon{background:#fff7ed;border-color:#fed7aa}
+.lastbox.gone{background:#fef2f2;border-color:#fecaca}
+.lastlist{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+.lastlist span{padding:4px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);font-size:13px}
+.lastlist span.off{opacity:.45;text-decoration:line-through}
 .tip{background:var(--sky);border:1px solid var(--sky2);border-radius:14px;padding:13px 15px;font-size:14px;margin-top:12px;line-height:1.9}
 .formula{font-family:ui-monospace,Consolas,monospace;background:var(--sky);color:var(--deep);border-radius:12px;padding:12px 14px;font-size:13px;overflow-x:auto;line-height:1.8}
 .chart{position:relative;height:270px;margin-top:6px}
