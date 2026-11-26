@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLAT 올팍</title>
+<meta name="description" content="공연 데이터 기반 올림픽공원 귀갓길 혼잡도 예측·분산 안내 서비스">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f6fa; --card:#ffffff; --ink:#14213d; --sub:#5b6475; --line:#e3e7ee;
+  --brand:#1f3a5f; --accent:#ff7a45; --chip:#eef2f8;
+  --lv0:#22a06b; --lv1:#e2b203; --lv2:#f5832a; --lv3:#e5484d;
+  --shadow:0 1px 2px rgba(20,33,61,.06),0 4px 16px rgba(20,33,61,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0f1420; --card:#171e2d; --ink:#e8edf6; --sub:#9aa5b8; --line:#283246; --brand:#8fb4e3; --chip:#1f2839; --shadow:none; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans KR',system-ui,sans-serif;font-size:15px;line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px 40px}
+header{padding:22px 0 10px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.logo{font-weight:900;font-size:26px;letter-spacing:-.5px;color:var(--brand)}
+.logo b{color:var(--accent)}
+.tag{color:var(--sub);font-size:13px}
+.demo-badge{font-size:12px;background:var(--chip);color:var(--sub);padding:4px 10px;border-radius:99px}
+h2{font-size:17px;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow);margin-top:14px}
+.dates{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px;scrollbar-width:thin}
+.date{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:8px 12px;cursor:pointer;text-align:center;min-width:64px;font:inherit}
+.date small{display:block;color:var(--sub);font-size:11px}
+.date.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.date.on small{color:#dbe6f5}
+.date.we small{color:var(--accent)}
+.shows{display:grid;gap:8px}
+.show{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer;background:var(--card);color:var(--ink);text-align:left;font:inherit;width:100%}
+.show.on{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+.show .time{font-weight:700;font-size:18px;min-width:56px;color:var(--brand)}
+.show .t{font-weight:500}
+.show .v{color:var(--sub);font-size:13px}
+.tabs{display:flex;gap:6px;margin-top:18px;overflow-x:auto}
+.tab{flex:0 0 auto;border:0;background:var(--chip);color:var(--ink);padding:9px 14px;border-radius:99px;cursor:pointer;font:inherit;font-weight:500}
+.tab.on{background:var(--ink);color:var(--bg)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+select,input[type=range]{font:inherit}
+select{padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.slider{display:flex;align-items:center;gap:8px;color:var(--sub);font-size:13px}
+.opts{display:grid;gap:10px;margin-top:12px}
+.opt{border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;gap:6px}
+.opt.best{border-color:var(--accent)}
+.opt .head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.opt .rank{font-size:12px;font-weight:700;color:var(--accent)}
+.opt .st{font-weight:700;font-size:17px}
+.opt .meta{color:var(--sub);font-size:13px}
+.steps{display:flex;gap:6px;flex-wrap:wrap;font-size:13px}
+.steps span{background:var(--chip);padding:3px 8px;border-radius:8px}
+.pill{display:inline-block;font-size:12px;font-weight:700;color:#fff;padding:3px 9px;border-radius:99px}
+.lv0{background:var(--lv0)} .lv1{background:var(--lv1);color:#3a2e00} .lv2{background:var(--lv2)} .lv3{background:var(--lv3)}
+.compare{background:var(--chip);border-radius:12px;padding:12px;font-size:14px;margin-top:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.kpi{background:var(--chip);border-radius:12px;padding:12px}
+.kpi .n{font-size:22px;font-weight:900}
+.kpi .l{font-size:12px;color:var(--sub)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--sub);font-weight:500;font-size:12px}
+.chart{position:relative;height:260px}
+.formula{font-family:ui-monospace,Consolas,monospace;background:var(--chip);border-radius:10px;padding:10px 12px;font-size:13px;overflow-x:auto}
+.note{font-size:12px;color:var(--sub)}
+.advice{font-size:16px;font-weight:700}
+footer{margin-top:28px;font-size:12px;color:var(--sub);line-height:1.7}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="logo">FLAT <b>올팍</b></div>
+      <div class="tag">공연 끝나고, 덜 붐비게 집에 가는 법 — 올림픽공원 귀갓길 혼잡도 예측</div>
+    </div>
+    <span class="demo-badge">공모전 시연 버전</span>
+  </header>
+
+  <div class="card">
+    <h2>날짜 선택</h2>
+    <div class="dates" id="dates"></div>
+    <h2 style="margin-top:10px">관람할 공연</h2>
+    <div class="shows" id="shows"></div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-tab="plan">귀가 플랜</button>
+    <button class="tab" data-tab="forecast">혼잡 예보</button>
+    <button class="tab" data-tab="bus">버스 차내 혼잡도</button>
+    <button class="tab" data-tab="ops">운영자 대시보드</button>
+  </div>
+
+  <section id="tab-plan" class="card">
+    <h2>덜 붐비게 집에 가기</h2>
+    <div class="row">
+      <label>목적지 <select id="dest"></select></label>
+      <div class="slider">빨리 가기 <input type="range" id="comfort" min="0" max="1" step="0.25" value="0.5"> 편하게 가기</div>
+    </div>
+    <div id="planOut"></div>
+  </section>
+
+  <section id="tab-forecast" class="card hidden">
+    <h2>오늘의 혼잡 예보</h2>
+    <div id="fcKpis" class="kpis"></div>
+    <div class="grid2" style="margin-top:14px">
+      <div><h2>역·정류장 혼잡도 (시간대별)</h2><div class="chart"><canvas id="cStations"></canvas></div></div>
+      <div><h2>주차장 점유율 (시간대별)</h2><div class="chart"><canvas id="cParking"></canvas></div></div>
+    </div>
+    <div id="fcArrive" class="compare"></div>
+  </section>
+
+  <section id="tab-bus" class="card hidden">
+    <h2>버스 차내 혼잡도 — 정류장별 승하차 누적</h2>
+    <div class="formula">재차 인원(i) = 재차 인원(i−1) + 승차(i) − 하차(i) + 공연 추가 승차(i)<br>혼잡도(i) = 재차 인원(i) ÷ 최대 탑승 인원</div>
+    <p class="note" id="busNote"></p>
+    <div class="chart"><canvas id="cBus"></canvas></div>
+    <div id="busTable" style="overflow-x:auto;margin-top:10px"></div>
+  </section>
+
+  <section id="tab-ops" class="card hidden">
+    <h2>운영자 대시보드 — 공연 종료 후 인파 분산 계획</h2>
+    <div id="opsKpis" class="kpis"></div>
+    <div class="chart" style="margin-top:14px"><canvas id="cOps"></canvas></div>
+    <div id="opsTable" style="overflow-x:auto;margin-top:10px"></div>
+  </section>
+
+  <footer>
+    <b>데이터 안내</b><br>
+    · 공연 일정: 올림픽공원 공연/행사 일정(2026년 11~12월) — 한국체육산업개발 「올림픽공원 공연정보」와 동일 출처<br>
+    · 혼잡 예측 계수(관객 수, 자가용 비율, 퇴장 분포, 역별 기준 혼잡도, 도보·이동 시간)는 <b>시연용 예시값</b>입니다. 정식 서비스에서는 한국체육산업개발 「올림픽공원 차량입출차·공연·날씨정보 연계 데이터」, 「입출차정보(전체구역)」, 「실시간 주차현황」과 서울시 버스·지하철 승하차 데이터로 산출합니다.<br>
+    · 2026 공공데이터 활용 경진대회 출품작 시연 페이지
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="data.js?v=5"></script>
+<script src="model.js?v=5"></script>
+<script src="app.js?v=5"></script>
+</body>
+</html>
