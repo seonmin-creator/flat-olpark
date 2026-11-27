@@ -20,6 +20,7 @@ export default {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
       'Content-Type': 'application/json; charset=utf-8',
+      Vary: 'Origin', // 사이트마다 허용 헤더가 달라 브라우저 캐시가 섞이지 않게
     };
     if (req.method === 'OPTIONS') return new Response(null, { headers });
     if (req.method !== 'GET') return json({ error: 'GET only' }, 405, headers);
@@ -78,7 +79,8 @@ export default {
       try {
         const r = await fetch(target, { cf: { cacheTtl: ttl, cacheEverything: true } });
         if (r.status < 500 || i === 1) {
-          return new Response(await r.text(), { status: r.status, headers: { ...headers, 'Cache-Control': `public, max-age=${ttl}` } });
+          const cache = r.ok ? `public, max-age=${Math.min(ttl, 3600)}` : 'no-store'; // 실패 응답은 저장하지 않음
+          return new Response(await r.text(), { status: r.status, headers: { ...headers, 'Cache-Control': cache } });
         }
       } catch (e) { lastErr = e; }
       await new Promise((res) => setTimeout(res, 500));
