@@ -21,7 +21,11 @@ export default {
     if (req.method === 'OPTIONS') return new Response(null, { headers });
     if (req.method !== 'GET') return json({ error: 'GET only' }, 405, headers);
 
-    const ws = (path, params) => `${WS}/${path}?` + new URLSearchParams({ serviceKey: env.DATA_KEY, resultType: 'json', ...params });
+    // 공공데이터포털 키는 Encoding(%2F 포함)·Decoding 어느 쪽을 넣어도 되도록 Decoding으로 통일
+    const dataKey = String(env.DATA_KEY || '').trim();
+    const serviceKey = dataKey.includes('%') ? decodeURIComponent(dataKey) : dataKey;
+    const seoulKey = String(env.SEOUL_KEY || '').trim();
+    const ws = (path, params) => `${WS}/${path}?` + new URLSearchParams({ serviceKey, resultType: 'json', ...params });
     const need = (...keys) => keys.every((k) => p.get(k));
     let target, ttl = 300;
 
@@ -52,10 +56,11 @@ export default {
         break;
       case '/api/card': // 교통카드 승하차 — 서울 열린데이터광장: CardBusTimeNew
         if (!need('ym', 'rte') || !/^\d{6}$/.test(p.get('ym'))) break;
-        target = `http://openapi.seoul.go.kr:8088/${env.SEOUL_KEY}/json/CardBusTimeNew/1/1000/${p.get('ym')}/${encodeURIComponent(p.get('rte'))}/`; ttl = 86400;
+        target = `http://openapi.seoul.go.kr:8088/${seoulKey}/json/CardBusTimeNew/1/1000/${p.get('ym')}/${encodeURIComponent(p.get('rte'))}/`; ttl = 86400;
         break;
       case '/api/health':
-        return json({ ok: true, dataKey: !!env.DATA_KEY, seoulKey: !!env.SEOUL_KEY }, 200, headers);
+        // 키 값은 절대 내보내지 않고 길이만 알려줌 (두 키가 바뀌어 들어갔는지 확인용: 서울 키는 30자)
+        return json({ ok: true, dataKeyLen: serviceKey.length, seoulKeyLen: seoulKey.length }, 200, headers);
       default:
         return json({ error: 'not found' }, 404, headers);
     }
