@@ -91,7 +91,7 @@
     opts = M.options(originIds(), destArg(), st.date, st.time);
     if (!opts.length) { $('opts').innerHTML = '<p class="note">이 시간 이후 운행하는 버스가 없어요. 위의 막차 시간을 확인해 주세요.</p>'; $('tipBox').innerHTML = ''; return; }
     const LV = { lv0: 0, lv1: 1, lv2: 2, lv3: 3 };
-    const comfort = (o) => o.arrive + 30 * LV[M.level(o.maxCong).cls] + 20 * o.maxCong;
+    const comfort = (o) => o.arrive + 20 * LV[M.level(o.maxCong).cls] + 20 * o.maxCong;
     const score = (o) => (st.sort === 'fast' ? o.arrive : comfort(o));
     opts.sort((a, b) => score(a) - score(b));
     st.pick = Math.min(st.pick, opts.length - 1);
@@ -99,7 +99,7 @@
       const seg = o.ride.slice(o.oi, o.di);
       return `<button class="opt ${i === st.pick ? 'on' : ''}" data-i="${i}">
         <div class="head"><div class="rt">${o.route.RTE_NM}${o.isLast ? ' <span class="lasttag">막차</span>' : ''}</div>${pill(o.maxCong)}</div>
-        <div class="meta">🚏 ${o.origin} <b>${M.fmt(o.arriveO)}</b> 탑승 (${r1(o.wait)}분 후) → ${o.ride[o.di].name} <b>${M.fmt(o.arrive)}</b> 도착${st.destIds && o.ride[o.di].name !== st.dest ? ' <span class="lasttag" style="background:#0ea5e9">환승</span>' : ''} · ${r1(o.travel)}분 · ${o.di - o.oi}정류장</div>
+        <div class="meta">🚏 ${o.origin} <b>${M.fmt(o.arriveO)}</b> 탑승 (${r1(o.wait)}분 후) → ${o.ride[o.di].name} <b>${M.fmt(o.arrive)}</b> 도착${st.transferIds && st.transferIds.has(o.ride[o.di].id) ? ' <span class="lasttag" style="background:#0ea5e9">환승</span>' : ''} · ${r1(o.travel)}분 · ${o.di - o.oi}정류장</div>
         <div class="strip" title="정류장별 차내 혼잡도">${seg.map((s) => `<i style="background:${lvColor(s.cong)}"></i>`).join('')}</div>
         ${o.extra > 0.5 ? `<div class="meta">🎵 공연이 끝난 관객 약 <b>${r1(o.extra)}명</b>이 함께 타요 · 공연 없을 때는 ${pill(o.baseMax)}</div>` : ''}
       </button>`;
@@ -108,7 +108,7 @@
     const first = opts.slice().sort((a, b) => a.arriveO - b.arriveO)[0];
     const best = opts.slice().sort((a, b) => comfort(a) - comfort(b))[0];
     $('tipBox').innerHTML = (first !== best && best.maxCong < first.maxCong - 0.05)
-      ? `<div class="tip">가장 먼저 오는 <b>${first.route.RTE_NM}</b> ${M.fmt(first.arriveO)} 버스는 ${pill(first.maxCong)} 상태예요. <b>${r1(best.arriveO - first.arriveO)}분</b>만 더 기다려 <b>${best.route.RTE_NM}</b> ${M.fmt(best.arriveO)} 버스를 타면 ${pill(best.maxCong)} 상태로 갈 수 있어요.</div>`
+      ? `<div class="tip">가장 먼저 오는 <b>${first.route.RTE_NM}</b> ${M.fmt(first.arriveO)} 버스는 ${pill(first.maxCong)} 상태예요. <b>${r1(best.arriveO - first.arriveO)}분</b>${best.arriveO - first.arriveO <= 20 ? '만' : ''} 더 기다려 <b>${best.route.RTE_NM}</b> ${M.fmt(best.arriveO)} 버스를 타면 ${pill(best.maxCong)} 상태로 갈 수 있어요.</div>`
       : `<div class="tip">지금 가장 먼저 오는 <b>${first.route.RTE_NM}</b> ${M.fmt(first.arriveO)} 버스를 타는 게 좋아요. ${pill(first.maxCong)}</div>`;
   }
 
@@ -165,9 +165,9 @@
   // live.js(네이버 지도 연동)가 실제 노선 데이터로 만든 모델을 넘겨주는 통로
   FLAT.app = {
     useModel(model, o) {
-      M = model; st.destIds = o.destIds; st.dest = o.destLabel; st.origin = 'all'; st.pick = 0;
+      M = model; st.destIds = o.destIds; st.transferIds = o.transferIds || null; st.dest = o.destLabel; st.origin = 'all'; st.pick = 0;
       setSource(); refreshDest(); render();
     },
-    reset() { M = FLAT.model; st.destIds = null; st.dest = ''; st.pick = 0; setSource(); refreshDest(); render(); },
+    reset() { M = FLAT.model; st.destIds = null; st.transferIds = null; st.dest = ''; st.pick = 0; setSource(); refreshDest(); render(); },
   };
 })();

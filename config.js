@@ -3,5 +3,5 @@
 // 지도는 키가 필요 없는 OpenStreetMap(Leaflet)을 사용합니다.
 window.FLAT = window.FLAT || {};
 FLAT.CONFIG = {
-  proxyUrl: '',   // 예: 'https://olpark-safebus-proxy.<계정>.workers.dev'
+  proxyUrl: 'https://olpark-safebus-proxy.gim623110.workers.dev',
 };

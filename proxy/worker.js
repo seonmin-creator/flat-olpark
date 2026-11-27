@@ -12,7 +12,10 @@ export default {
   async fetch(req, env) {
     const url = new URL(req.url);
     const p = url.searchParams;
-    const origin = env.ALLOW_ORIGIN || '*';
+    // ALLOW_ORIGIN: 쉼표로 여러 주소 허용 (배포 사이트 + 내 컴퓨터 시험용)
+    const allowed = String(env.ALLOW_ORIGIN || '*').split(',').map((s) => s.trim());
+    const reqOrigin = req.headers.get('Origin') || '';
+    const origin = allowed.includes('*') ? '*' : allowed.includes(reqOrigin) ? reqOrigin : allowed[0];
     const headers = {
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'GET, OPTIONS',
@@ -22,9 +25,12 @@ export default {
     if (req.method !== 'GET') return json({ error: 'GET only' }, 405, headers);
 
     // 공공데이터포털 키는 Encoding(%2F 포함)·Decoding 어느 쪽을 넣어도 되도록 Decoding으로 통일
-    const dataKey = String(env.DATA_KEY || '').trim();
+    let dataKey = String(env.DATA_KEY || '').trim();
+    let seoulKey = String(env.SEOUL_KEY || '').trim();
+    // 서울 열린데이터광장 키는 16진수 30자. 두 키가 바뀌어 들어갔으면 자동으로 바로잡음
+    const isSeoulKey = (k) => /^[0-9a-f]{30}$/i.test(k);
+    if (isSeoulKey(dataKey) && !isSeoulKey(seoulKey)) [dataKey, seoulKey] = [seoulKey, dataKey];
     const serviceKey = dataKey.includes('%') ? decodeURIComponent(dataKey) : dataKey;
-    const seoulKey = String(env.SEOUL_KEY || '').trim();
     const ws = (path, params) => `${WS}/${path}?` + new URLSearchParams({ serviceKey, resultType: 'json', ...params });
     const need = (...keys) => keys.every((k) => p.get(k));
     let target, ttl = 300;
@@ -66,12 +72,18 @@ export default {
     }
     if (!target) return json({ error: 'missing parameters' }, 400, headers);
 
-    try {
-      const r = await fetch(target, { cf: { cacheTtl: ttl, cacheEverything: true } });
-      return new Response(await r.text(), { status: r.status, headers: { ...headers, 'Cache-Control': `public, max-age=${ttl}` } });
-    } catch (e) {
-      return json({ error: 'upstream failed', detail: String(e) }, 502, headers);
+    // 공공데이터 서버가 느리거나 연결이 끊기면(5xx) 한 번 더 시도
+    let lastErr = null;
+    for (let i = 0; i < 2; i++) {
+      try {
+        const r = await fetch(target, { cf: { cacheTtl: ttl, cacheEverything: true } });
+        if (r.status < 500 || i === 1) {
+          return new Response(await r.text(), { status: r.status, headers: { ...headers, 'Cache-Control': `public, max-age=${ttl}` } });
+        }
+      } catch (e) { lastErr = e; }
+      await new Promise((res) => setTimeout(res, 500));
     }
+    return json({ error: 'upstream failed', detail: String(lastErr) }, 502, headers);
   },
 };
 

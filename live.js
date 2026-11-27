@@ -7,6 +7,12 @@
   const VENUE_POS = {
     kspo: [127.1270, 37.5197], arena: [127.1240, 37.5164], hall: [127.1296, 37.5190], art: [127.1256, 37.5181],
   };
+  // 경로 검색 API는 출발 좌표에 따라 결과가 달라서, 못 찾으면 공원 주변 정류장 지점에서 다시 찾음
+  const EXTRA_STARTS = [
+    [127.1160, 37.5205], // 평화의문 쪽
+    [127.1309, 37.5167], // 올림픽공원역
+    [127.1124, 37.5171], // 몽촌토성역
+  ];
   let map = null, destMarker = null, layers = [];
 
   const arr = (x) => (Array.isArray(x) ? x : x ? [x] : []);
@@ -27,11 +33,21 @@
   }
   const isLive = () => !!(C.proxyUrl || FLAT.MOCK_API);
 
-  async function api(path, params) {
+  // 공공데이터 서버가 잠깐 느리거나 끊길 때(5xx) 최대 2번 더 시도
+  async function api(path, params, tries = 3) {
     if (FLAT.MOCK_API) return FLAT.MOCK_API(path, params);
-    const r = await fetch(C.proxyUrl.replace(/\/$/, '') + path + '?' + new URLSearchParams(params));
-    if (!r.ok) throw new Error(`${path} ${r.status}`);
-    return r.json();
+    const url = C.proxyUrl.replace(/\/$/, '') + path + '?' + new URLSearchParams(params);
+    let last;
+    for (let i = 0; i < tries; i++) {
+      try {
+        const r = await fetch(url);
+        if (r.ok) return r.json();
+        last = new Error(`${path} ${r.status}`);
+        if (r.status < 500) break;
+      } catch (e) { last = e; }
+      await new Promise((res) => setTimeout(res, 700 * (i + 1)));
+    }
+    throw last;
   }
   const status = (msg, err) => { const s = $('liveStatus'); if (s) { s.innerHTML = msg; s.className = 'live-status' + (err ? ' err' : ''); } };
 
@@ -112,7 +128,6 @@
   // ---------- 목적지 선택 → 노선 찾기 → 혼잡도 계산 ----------
   async function pick(dest) {
     const venue = ($('liveVenue') && $('liveVenue').value) || 'kspo';
-    const [sx, sy] = VENUE_POS[venue];
     clearMap();
     if (map) {
       destMarker = L.circleMarker([dest.y, dest.x], { radius: 9, color: '#fff', weight: 3, fillColor: '#ef4444', fillOpacity: 1 })
@@ -120,7 +135,11 @@
     }
     status(`<b>${esc(dest.name)}</b>(으)로 가는 버스를 찾는 중…`);
     try {
-      const paths = items(await api('/api/path', { sx, sy, ex: dest.x, ey: dest.y }));
+      let paths = [];
+      for (const [sx, sy] of [VENUE_POS[venue], ...EXTRA_STARTS]) {
+        paths = items(await api('/api/path', { sx, sy, ex: dest.x, ey: dest.y }));
+        if (paths.some((p) => (arr(p.pathList)[0] || {}).routeId)) break;
+      }
       // 각 경로의 첫 번째 버스 구간 = 올림픽공원 근처에서 타는 버스
       const legs = [];
       let transfer = 0;
@@ -128,13 +147,20 @@
         const pl = arr(p.pathList);
         if (!pl.length || !pl[0].routeId) continue;
         if (pl.length > 1) transfer++;
-        if (!legs.some((l) => l.routeId === pl[0].routeId)) legs.push(pl[0]);
+        const same = legs.find((l) => l.routeId === pl[0].routeId);
+        if (!same) legs.push({ ...pl[0], isTransfer: pl.length > 1 });
+        else if (pl.length === 1) same.isTransfer = false; // 바로 가는 경로가 하나라도 있으면 환승 아님
       }
       if (!legs.length) return status('올림픽공원에서 출발하는 버스 경로를 찾지 못했어요.', true);
+      // 바로 가는 버스가 있으면 환승 경로는 빼고 계산
+      if (legs.some((l) => !l.isTransfer)) { const direct = legs.filter((l) => !l.isTransfer); legs.length = 0; legs.push(...direct); transfer = 0; }
 
-      const metas = [], rowsAll = [], destIds = new Set(), boards = [];
-      let src = null;
-      for (const leg of legs.slice(0, 4)) {
+      const metas = [], rowsAll = [], destIds = new Set(), transferIds = new Set(), boards = [];
+      let src = null, failed = 0;
+      const todo = legs.slice(0, 4);
+      for (const [n, leg] of todo.entries()) {
+        status(`<b>${esc(dest.name)}</b>(으)로 가는 버스 계산 중… (노선 ${n + 1}/${todo.length}: ${esc(leg.routeNm)}번)`);
+        try {
         const rid = leg.routeId;
         const [stJ, riJ, card] = await Promise.all([api('/api/stations', { rid }), api('/api/routeinfo', { rid }), cardRows(leg.routeNm)]);
         const stations = items(stJ).sort((a, b) => +a.seq - +b.seq);
@@ -164,11 +190,13 @@
         metas.push(meta);
         rowsAll.push(...card.rows);
         destIds.add(tid);
+        if (leg.isTransfer) transferIds.add(tid);
         boards.push({ id: fid, x: +leg.fx, y: +leg.fy });
         src = src || card;
         drawLine(stations, leg, meta.RTE_NM);
+        } catch (e) { failed++; } // 한 노선이 실패해도 나머지 노선은 계속 계산
       }
-      if (!metas.length) return status('찾은 노선의 교통카드 승하차 데이터를 불러오지 못했어요.', true);
+      if (!metas.length) return status(`찾은 노선의 교통카드 승하차 데이터를 불러오지 못했어요.${failed ? ' 공공데이터 서버가 잠시 느린 것 같아요. 잠시 뒤 다시 시도해 주세요.' : ''}`, true);
       if (map && layers.length) map.fitBounds(L.featureGroup([...layers, destMarker].filter(Boolean)).getBounds(), { padding: [30, 30] });
 
       // 좌표로 공연장별 가까운 탑승 정류장 비중 계산
@@ -186,8 +214,8 @@
         CARD_ROWS: rowsAll, ROUTE_META: metas, VENUE_STOPS,
         BUS_SOURCE: { kind: 'real', label: `서울시 교통카드 승하차 인원 (${ym.slice(0, 4)}년 ${+ym.slice(4)}월) · ${metas.length}개 노선`, useYm: ym, days: src.days },
       });
-      FLAT.app.useModel(model, { destIds, destLabel: dest.name });
-      status(`<b>${esc(dest.name)}</b>까지 가는 버스 <b>${metas.length}개 노선</b>으로 계산했어요.${transfer ? ' (환승 경로는 첫 버스 구간만 계산)' : ''}`);
+      FLAT.app.useModel(model, { destIds, transferIds, destLabel: dest.name });
+      status(`<b>${esc(dest.name)}</b>까지 가는 버스 <b>${metas.length}개 노선</b>으로 계산했어요.${transfer ? ' (환승 경로는 첫 버스 구간만 계산)' : ''}${failed ? ` · ${failed}개 노선은 데이터를 불러오지 못해 제외했어요.` : ''}`);
     } catch (e) {
       status('노선 계산에 실패했어요: ' + esc(e.message), true);
     }

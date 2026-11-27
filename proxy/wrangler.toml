@@ -4,7 +4,7 @@ main = "worker.js"
 compatibility_date = "2025-06-01"
 
 [vars]
-ALLOW_ORIGIN = "https://seonmin-creator.github.io"
+ALLOW_ORIGIN = "https://seonmin-creator.github.io,http://localhost:5178"
 # 인증키는 여기 적지 말고 비밀값으로 넣으세요:
 #   npx wrangler secret put DATA_KEY
 #   npx wrangler secret put SEOUL_KEY
