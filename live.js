@@ -1,5 +1,5 @@
-// 올림픽공원 안전버스 — 실시간 모드: 네이버 지도에서 목적지 고르기 → 실제 버스 노선으로 혼잡도 계산
-// config.js 의 naverClientId·proxyUrl 이 있어야 켜집니다. 없으면 안내만 보여주고 예시 데이터 시연 모드를 유지합니다.
+// 올림픽공원 안전버스 — 실시간 모드: 지도(Leaflet + OpenStreetMap)에서 목적지 고르기 → 실제 버스 노선으로 혼잡도 계산
+// 지도는 키·회원가입이 필요 없는 OpenStreetMap을 씁니다. config.js 의 proxyUrl(중계 서버 주소)만 있으면 켜집니다.
 (function () {
   const $ = (id) => document.getElementById(id);
   const C = FLAT.CONFIG || {};
@@ -7,7 +7,7 @@
   const VENUE_POS = {
     kspo: [127.1270, 37.5197], arena: [127.1240, 37.5164], hall: [127.1296, 37.5190], art: [127.1256, 37.5181],
   };
-  let map = null, destMarker = null, lines = [];
+  let map = null, destMarker = null, layers = [];
 
   const arr = (x) => (Array.isArray(x) ? x : x ? [x] : []);
   const items = (j) => arr(j && j.msgBody && j.msgBody.itemList);
@@ -25,7 +25,7 @@
     const a = Math.sin(((y2 - y1) * toR) / 2) ** 2 + Math.cos(y1 * toR) * Math.cos(y2 * toR) * Math.sin(((x2 - x1) * toR) / 2) ** 2;
     return 2 * R * Math.asin(Math.sqrt(a));
   }
-  const isLive = () => !!((C.naverClientId && C.proxyUrl) || FLAT.MOCK_API);
+  const isLive = () => !!(C.proxyUrl || FLAT.MOCK_API);
 
   async function api(path, params) {
     if (FLAT.MOCK_API) return FLAT.MOCK_API(path, params);
@@ -41,7 +41,7 @@
     if (!panel) return;
     if (!isLive()) {
       panel.innerHTML = `<div class="live-head"><h3 class="card-title" style="margin:0">🗺️ 지도에서 목적지 고르기</h3><span class="badge soon-badge">준비 중</span></div>
-        <p class="note" style="margin:8px 0 0">네이버 지도·공공데이터 인증키를 설정하면 서울 어디든 목적지로 골라, 그곳에 가는 실제 버스 노선으로 혼잡도를 계산해요. 지금은 아래 예시 노선으로 체험할 수 있어요.</p>`;
+        <p class="note" style="margin:8px 0 0">공공데이터 인증키를 연결하면 서울 어디든 목적지로 골라, 그곳에 가는 실제 버스 노선으로 혼잡도를 계산해요. 지금은 아래 예시 노선으로 체험할 수 있어요.</p>`;
       return;
     }
     panel.innerHTML = `<div class="live-head"><h3 class="card-title" style="margin:0">🗺️ 지도에서 목적지 고르기</h3><span class="badge">실시간 노선</span></div>
@@ -51,7 +51,7 @@
         <button id="liveGo" class="btn btn-sm" type="button">검색</button>
       </div>
       <div id="liveResults" class="live-results"></div>
-      <div id="liveMap" class="live-map"><span class="note">지도를 불러오는 중…</span></div>
+      <div id="liveMap" class="live-map"></div>
       <p id="liveStatus" class="live-status">검색하거나 지도를 눌러 목적지를 고르세요.</p>`;
     $('liveGo').addEventListener('click', search);
     $('liveQ').addEventListener('keydown', (e) => { if (e.key === 'Enter') search(); });
@@ -59,20 +59,16 @@
   }
 
   function initMap() {
-    if (!C.naverClientId) { $('liveMap').innerHTML = '<span class="note">네이버 지도 키가 없어 지도는 표시하지 않아요 (검색은 사용 가능).</span>'; return; }
-    const param = C.naverParam || 'ncpKeyId';
-    const go = () => {
-      $('liveMap').innerHTML = '';
-      map = new naver.maps.Map('liveMap', { center: new naver.maps.LatLng(37.5206, 127.1215), zoom: 13 });
-      new naver.maps.Marker({ position: new naver.maps.LatLng(37.5197, 127.1270), map, title: '올림픽공원' });
-      naver.maps.Event.addListener(map, 'click', (e) => pick({ name: '지도에서 고른 곳', x: e.coord.lng(), y: e.coord.lat() }));
-    };
-    if (window.naver && naver.maps) return go();
-    const s = document.createElement('script');
-    s.src = `https://oapi.map.naver.com/openapi/v3/maps.js?${param}=${encodeURIComponent(C.naverClientId)}`;
-    s.onload = go;
-    s.onerror = () => { $('liveMap').innerHTML = '<span class="note">네이버 지도를 불러오지 못했어요. Client ID와 서비스 URL 등록을 확인하세요.</span>'; };
-    document.head.appendChild(s);
+    if (!window.L) { $('liveMap').innerHTML = '<span class="note">지도를 불러오지 못했어요 (검색은 사용 가능).</span>'; return; }
+    if (map) { map.remove(); map = null; }
+    map = L.map('liveMap', { scrollWheelZoom: false }).setView([37.5206, 127.1215], 13);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+    L.circleMarker([37.5197, 127.1270], { radius: 9, color: '#fff', weight: 3, fillColor: '#2563eb', fillOpacity: 1 })
+      .addTo(map).bindTooltip('올림픽공원', { permanent: true, direction: 'top', offset: [0, -8] });
+    map.on('click', (e) => pick({ name: '지도에서 고른 곳', x: e.latlng.lng, y: e.latlng.lat }));
+    setTimeout(() => map && map.invalidateSize(), 200);
   }
 
   async function search() {
@@ -107,14 +103,20 @@
     return { rows: [], ym: null, days: 30 };
   }
 
+  function clearMap() {
+    if (!map) return;
+    layers.forEach((l) => map.removeLayer(l)); layers = [];
+    if (destMarker) { map.removeLayer(destMarker); destMarker = null; }
+  }
+
   // ---------- 목적지 선택 → 노선 찾기 → 혼잡도 계산 ----------
   async function pick(dest) {
     const venue = ($('liveVenue') && $('liveVenue').value) || 'kspo';
     const [sx, sy] = VENUE_POS[venue];
+    clearMap();
     if (map) {
-      if (destMarker) destMarker.setMap(null);
-      destMarker = new naver.maps.Marker({ position: new naver.maps.LatLng(dest.y, dest.x), map, title: dest.name });
-      lines.forEach((l) => l.setMap(null)); lines = [];
+      destMarker = L.circleMarker([dest.y, dest.x], { radius: 9, color: '#fff', weight: 3, fillColor: '#ef4444', fillOpacity: 1 })
+        .addTo(map).bindTooltip(esc(dest.name), { permanent: true, direction: 'top', offset: [0, -8] });
     }
     status(`<b>${esc(dest.name)}</b>(으)로 가는 버스를 찾는 중…`);
     try {
@@ -164,15 +166,18 @@
         destIds.add(tid);
         boards.push({ id: fid, x: +leg.fx, y: +leg.fy });
         src = src || card;
-        drawLine(stations, leg);
+        drawLine(stations, leg, meta.RTE_NM);
       }
       if (!metas.length) return status('찾은 노선의 교통카드 승하차 데이터를 불러오지 못했어요.', true);
+      if (map && layers.length) map.fitBounds(L.featureGroup([...layers, destMarker].filter(Boolean)).getBounds(), { padding: [30, 30] });
 
       // 좌표로 공연장별 가까운 탑승 정류장 비중 계산
       const VENUE_STOPS = {};
       for (const [v, [vx, vy]] of Object.entries(VENUE_POS)) {
         const w = {};
         boards.forEach((b) => { const d = distM(vx, vy, b.x, b.y); if (d <= 800) w[b.id] = (w[b.id] || 0) + 1 / Math.max(50, d); });
+        // 800m 안에 정류장이 없으면 거리에 반비례해 모든 탑승 정류장에 나눔 (탑승 정류장은 항상 출발지로 남음)
+        if (!Object.keys(w).length) boards.forEach((b) => { w[b.id] = (w[b.id] || 0) + 1 / Math.max(50, distM(vx, vy, b.x, b.y)) ** 2; });
         const tot = Object.values(w).reduce((a, b) => a + b, 0) || 1;
         VENUE_STOPS[v] = Object.fromEntries(Object.entries(w).map(([k, val]) => [k, val / tot]));
       }
@@ -188,17 +193,17 @@
     }
   }
 
-  function drawLine(stations, leg) {
+  const LINE_COLORS = ['#2563eb', '#16a34a', '#9333ea', '#ea580c'];
+  function drawLine(stations, leg, name) {
     if (!map) return;
     const a = stations.findIndex((s) => s.station === leg.fid), b = stations.findIndex((s) => s.station === leg.tid);
     if (a < 0 || b <= a) return;
-    const pts = stations.slice(a, b + 1).map((s) => new naver.maps.LatLng(+s.gpsY, +s.gpsX));
-    lines.push(new naver.maps.Polyline({ map, path: pts, strokeColor: '#2563eb', strokeWeight: 5, strokeOpacity: 0.8 }));
+    const pts = stations.slice(a, b + 1).map((s) => [+s.gpsY, +s.gpsX]).filter((p) => p[0] && p[1]);
+    if (pts.length < 2) return;
+    const color = LINE_COLORS[layers.length % LINE_COLORS.length];
+    layers.push(L.polyline(pts, { color, weight: 5, opacity: 0.85 }).addTo(map).bindTooltip(esc(name)));
   }
 
-  FLAT.live = {
-    init: () => { lines.forEach((l) => l.setMap(null)); lines = []; render(); },
-    pick,
-  };
+  FLAT.live = { init: () => { clearMap(); render(); }, pick };
   render();
 })();
